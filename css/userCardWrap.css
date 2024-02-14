@@ -1,0 +1,142 @@
+.userCardWrap {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 1.2em;
+    justify-content: space-around;
+}
+
+/* cardsize Ratio is 1:0.7 */
+.cardWrap {
+    padding: 5px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: Arial, Helvetica, sans-serif;
+    min-width: 330px;
+    min-height: 480px;
+    max-width: 330px;
+    max-height: 480px;
+    border: 1px solid #000;
+    position: relative;
+}
+
+.onUsedCard {
+    outline: 4px dashed #db7093;
+}
+
+.cardWrap .header-top {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 5px;
+}
+
+.cardWrap .header-top .rank {
+    font-size: 24px;
+    font-weight: bolder;
+}
+
+.attr {
+    display: block;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+}
+
+.attr.fire {
+    border: 2px solid red;
+}
+
+.attr.aqua {
+    border: 2px solid blue;
+}
+
+.attr.leaf {
+    border: 2px solid limegreen;
+}
+
+.chrName {
+    position: absolute;
+    bottom: 180px;
+    font-size: 24px;
+    font-weight: bold;
+    right: 30px;
+    transform: rotate(350deg);
+    color: #fff;
+    text-shadow: 2px 0 4px #0078b2;
+}
+
+.cont-mid {
+    display: flex;
+    position: absolute;
+    left: 5px;
+    right: 5px;
+    bottom: 50px;
+    height: 100px;
+    flex-direction: column;
+}
+
+.levelCont {
+    font-size: 1.8em;
+    font-weight: bolder;
+}
+
+.cardWrap footer {
+    background-image: url(../img/cardBottom.svg);
+    background-repeat: no-repeat;
+    position: absolute;
+    bottom: -1px;
+    border-radius: 10px;
+    height: 24px;
+    left: 0;
+    right: 0;
+    background-size: cover;
+    background-position: center;
+    color: white;
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    justify-content: space-evenly;
+    padding: 0px 10px;
+    flex-direction: row;
+}
+
+.cardWrap .cont-infos {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.cardWrap .cont-flex-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 5px;
+}
+
+.cont-infos span {
+    padding: 0 5px;
+    font-size: 12px;
+    border: 1px solid #000;
+}
+
+.cont-infos .info_name {
+    height: 20px;
+    background-color: #ffc800;
+    overflow: auto;
+}
+
+.cont-infos :nth-child(2) {
+    flex: 1;
+    overflow: auto;
+}
+
+.fakeQR {
+    background-image: url(../img/fakeQR.png);
+    background-repeat: no-repeat;
+    width: 70px;
+    height: 70px;
+    display: block;
+    background-position: center;
+}

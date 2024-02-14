@@ -1,0 +1,13 @@
+#queryopt {
+    padding: 0;
+}
+
+footer {
+    display: flex;
+    flex-direction: column;
+}
+
+#CardOptionModel button:disabled {
+    filter: grayscale(1);
+    opacity: 0.3;
+}

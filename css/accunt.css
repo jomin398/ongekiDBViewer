@@ -1,0 +1,287 @@
+:root {
+    --cardWidth: 380px;
+    --cardHeight: 245px;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font: inherit;
+    font-size: 100%;
+    vertical-align: baseline;
+}
+
+.cl_eapass_cont {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    width: 60%;
+    margin: 0 auto;
+    justify-content: space-between;
+}
+
+.cl_eapass_aicc a {
+    text-decoration: none;
+    color: #004484;
+}
+
+.cl_eapass_aicc_inner {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.cl_eapass_aicc_mark {
+    background: url("../img/aicc_mark.png") no-repeat center center;
+    background-size: contain;
+    max-width: 30px;
+    flex-basis: 10%;
+}
+
+.cl_eapass_acccode {
+    background-color: black;
+    color: white;
+    text-align: center;
+    max-width: 15em;
+    flex-basis: 85%;
+    font-size: 1.1em;
+}
+
+.cl_eapass_cardnumber_area {
+    display: flex;
+}
+
+.cl_eapass_cardnumber_box {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    border: 1px solid;
+    color: #231816;
+    /* margin-bottom: 5px; */
+    font-size: 17px;
+    text-align: center;
+    font-family: "Courier New", Consolas, monospace;
+}
+
+.cl_eapass_col {
+    display: flex;
+    flex-direction: row;
+    gap: 1px
+}
+
+.cl_eapass_cardnumber_title,
+#id_formalized_code {
+    color: #fff;
+    background-color: #231816;
+    font-size: 1.2em;
+}
+
+.cl_eapass_cardnumber_title {
+    padding: 0px 3em;
+    font-weight: bolder;
+}
+
+#id_formalized_code,
+#id_eapass_input_cardnumber {
+    flex: 1;
+    text-align: center;
+}
+
+.aime_wrap {
+    border: 1px solid #000;
+    border-radius: 15px;
+    width: var(--cardWidth);
+    height: var(--cardHeight);
+    margin: 1em auto;
+    padding: 10px;
+}
+
+.aime_cont {
+    display: flex;
+    position: relative;
+    flex-direction: column;
+    background-color: #000;
+    border-radius: 10px;
+    width: calc(var(--cardWidth) - 20px);
+    height: calc(var(--cardHeight) - 20px);
+    color: #fff;
+    padding: 5px;
+    gap: 7px;
+    justify-content: flex-start;
+}
+
+.aime_col {
+    display: flex;
+    flex-direction: row;
+    gap: 1px;
+}
+
+.aime_cont .headmsg {
+    border: 2px solid #fff;
+    padding: 2px;
+    border-radius: 5px;
+    font-size: 9px;
+    justify-content: center;
+}
+
+.aime_mark_cont {
+    border: 1px solid;
+    display: flex;
+    justify-content: center;
+    height: 70px;
+    width: 70px;
+    border-radius: 5px;
+    align-items: center;
+    flex-direction: column;
+}
+
+.aime_col.middle {
+    height: 70px;
+    gap: 2px;
+}
+
+.aime_mark {
+    background: url("../img/aicc_mark.png") no-repeat center center;
+    background-size: contain;
+    width: 40px;
+    height: 40px;
+    display: block;
+}
+
+.aime_col.messages {
+    height: 55px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0 4px;
+}
+
+.aime_msgItem {
+    font-size: 8px;
+    height: 12px;
+}
+
+.aime_logoText {
+    font-size: 8px;
+    font-weight: bold;
+}
+
+.aime_ifomDmy_cont {
+    flex: 1;
+    display: flex;
+    border-radius: 5px;
+    padding: 5px 10px 5px 5px;
+    background-color: #fff;
+    color: #000;
+    font-size: 10px;
+    justify-content: space-between;
+}
+
+.aime_ifomDmy {
+    flex: 1;
+}
+
+.aime_ifomDmy h4,
+.aime_ifomDmy p,
+.aime_ifomDmy hr {
+    margin: 0;
+    font-size: inherit;
+}
+
+.aime_dmyQr_cont {
+    margin-left: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.aime_dmyQr {
+    border: 2px solid #000;
+    width: 45px;
+    height: 45px;
+}
+
+.aime_col.footer {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    right: 5px;
+    height: 50px;
+    gap: 5px;
+}
+
+.aime_col .memo_box {
+    width: 130px;
+    background: #fff;
+    border-radius: 5px;
+    color: #797979;
+    position: relative;
+    padding: 3px;
+}
+
+.memo_text {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.memo_deco {
+    position: absolute;
+    bottom: 3px;
+    left: 5px;
+}
+
+.aime_col .ac_box {
+    display: flex;
+    flex: 1;
+    position: relative;
+    flex-direction: column;
+    border: 1px solid;
+    border-radius: 5px;
+    padding: 3px;
+}
+
+.ac_deco {
+    display: flex;
+    justify-content: center;
+    gap: 3px;
+}
+
+.ac_box .ac {
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+}
+
+.ac_deco * {
+    font-size: 12px;
+    background: #fff;
+    color: #000;
+    width: 10px;
+    height: 15px;
+    text-align: center;
+    display: block;
+    font-weight: bolder;
+}
+
+.ac_deco :nth-child(7) {
+    margin-left: 5px;
+}
+
+@media screen and (max-width: 961px) {
+
+    .cl_eapass_cont,
+    .aime_wrap {
+        width: var(--cardWidth);
+        height: var(--cardHeight);
+    }
+
+    .cl_eapass_col {
+        flex-direction: column;
+    }
+}

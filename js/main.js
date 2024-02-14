@@ -1,18 +1,26 @@
 "use strict";
 
-const SQL_WASM_PATH = "https://inloop.github.io/sqlite-viewer/js/sql-wasm.wasm";
+const SQL_WASM_PATH = "./js/sql-wasm.wasm";
 
 const SQL_FROM_REGEX = /FROM\s+((?=['"])((["'])(?<g1>[^'"]+))|(?<g2>\w+))/mi;
 const SQL_LIMIT_REGEX = /LIMIT\s+(\d+)(?:\s*,\s*(\d+))?/mi;
 const SQL_SELECT_REGEX = /SELECT\s+[^;]+\s+FROM\s+/mi;
 
 let db = null;
-let lastCachedQueryCount = { select: "", count: 0 };
+let lastCachedQueryCount = {
+    select: "",
+    count: 0
+};
 let loadedTableNames = [];
-const editor = ace.edit("sql-editor");
+let editor;
 const errorBox = $("#error");
 const infoBox = $("#info");
+const queryElm = $("#query-box");
+let searched = false;
 
+let SQLModule = null;
+let isFirstRun = false;
+let isUserLoggedIn = false;
 const selectFormatter = function (item) {
     const index = item.text.indexOf("(");
     if (index > -1) {
@@ -24,11 +32,67 @@ const selectFormatter = function (item) {
     }
 };
 
-initialize();
+window.onload = () => {
+    initialize();
+    InitializeEditor();
+}
+
+function InitializeEditor() {
+    queryElm.hide();
+    //Initialize editor
+    editor.setTheme("ace/theme/chrome");
+    editor.renderer.setShowGutter(false);
+    editor.renderer.setShowPrintMargin(false);
+    editor.renderer.setPadding(20);
+    editor.renderer.setScrollMargin(8, 8, 0, 0);
+    editor.setHighlightActiveLine(false);
+    editor.getSession().setUseWrapMode(true);
+    editor.getSession().setMode("ace/mode/sql");
+    editor.setOptions({
+        maxLines: 5
+    });
+    editor.setFontSize(16);
+
+    $(".no-propagate").on("click", function (el) {
+        el.stopPropagation();
+    });
+
+    //Check url to load remote DB
+    $.urlParam = function (name) {
+        let results = new RegExp(`[\?&]${name}=([^&#]*)`).exec(window.location.href);
+        if (results == null) {
+            return null;
+        } else {
+            return results[1] || 0;
+        }
+    };
+    const loadUrlDB = $.urlParam("url");
+    if (loadUrlDB != null) {
+        setIsLoading(true);
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", decodeURIComponent(loadUrlDB), true);
+        xhr.responseType = "arraybuffer";
+        xhr.onload = function (e) {
+            loadDB(this.response);
+        };
+        xhr.onerror = function (e) {
+            setIsLoading(false);
+        };
+        xhr.send();
+    }
+}
 
 function initialize() {
+    editor = ace.edit("sql-editor");
+    $(".reuploadinfo").hide();
+
+    $('#CardOptionModel').on('hidden.bs.modal', e => {
+        jQuery.removeData(e.currentTarget)
+    })
+
     let fileReaderOpts = {
-        readAsDefault: "ArrayBuffer", on: {
+        readAsDefault: "ArrayBuffer",
+        on: {
             load: function (e) {
                 loadDB(e.target.result);
             }
@@ -53,99 +117,90 @@ function initialize() {
     } else {
         $("#dropzone, #dropzone-dialog").fileReaderJS(fileReaderOpts);
     }
+}
 
-    //Initialize editor
-    editor.setTheme("ace/theme/chrome");
-    editor.renderer.setShowGutter(false);
-    editor.renderer.setShowPrintMargin(false);
-    editor.renderer.setPadding(20);
-    editor.renderer.setScrollMargin(8, 8, 0, 0);
-    editor.setHighlightActiveLine(false);
-    editor.getSession().setUseWrapMode(true);
-    editor.getSession().setMode("ace/mode/sql");
-    editor.setOptions({maxLines: 5});
-    editor.setFontSize(16);
+function tableInit(tablesData) {
 
-    $(".no-propagate").on("click", function (el) {
-        el.stopPropagation();
-    });
+    let firstTableName = null;
 
-    //Check url to load remote DB
-    $.urlParam = function (name) {
-        let results = new RegExp( `[\?&]${name}=([^&#]*)`).exec(window.location.href);
-        if (results == null) {
-            return null;
-        } else {
-            return results[1] || 0;
+    const tableList = $("#tables");
+    while (tablesData.step()) {
+        const rowObj = tablesData.getAsObject();
+        const name = rowObj["name"];
+        const type = rowObj["type"];
+
+        if (firstTableName === null) {
+            firstTableName = name;
         }
-    };
-    const loadUrlDB = $.urlParam("url");
-    if (loadUrlDB != null) {
-        setIsLoading(true);
-        const xhr = new XMLHttpRequest();
-        xhr.open("GET", decodeURIComponent(loadUrlDB), true);
-        xhr.responseType = "arraybuffer";
-        xhr.onload = function (e) {
-            loadDB(this.response);
-        };
-        xhr.onerror = function (e) {
-            setIsLoading(false);
-        };
-        xhr.send();
+        const rowCount = getTableRowsCount(name);
+        loadedTableNames.push(name);
+        const tableType = type !== "table" ? `, ${type}` : "";
+        tableList.append(`<option value="${name}">${name} (${rowCount} rows${tableType})</option>`);
+    }
+    tablesData.free();
+    //Select first table and show It
+    tableList.val(firstTableName);
+    doDefaultSelect(firstTableName);
+    $("#output-box").fadeIn();
+    $(".nouploadinfo").hide();
+    $(".reuploadinfo").show();
+    $("#sample-db-link").hide();
+    $("#dropzone").delay(50).animate({
+        height: 75
+    }, 500);
+
+
+    $("#success-box").show();
+
+    //extras
+    $("#openConfig").show();
+    $("#query-box").show();
+    $(".advencedControl").hide();
+    $(".qurredResult").hide();
+    $("#menu-box").show();
+    setIsLoading(false);
+}
+
+function dbReset(arrayBuffer) {
+    setIsLoading(true);
+    resetTableList();
+    let tables = null;
+    try {
+        isFirstRun = !db ? true : false;
+        db ??= new SQLModule.Database(new Uint8Array(arrayBuffer));
+
+        //Get all table names from master table
+        tables = db.prepare("SELECT * FROM sqlite_master WHERE type='table' OR type='view' ORDER BY name");
+    } catch (ex) {
+        if (tables !== null) {
+            tables.free();
+        }
+        setIsLoading(false);
+        console.error(ex);
+        window.alert(ex);
+        return;
+    }
+
+    if (isFirstRun && !isUserLoggedIn) {
+        genUserLogin()
+            .then(() => tableInit(tables))
+            .catch(error => {
+                throw error;
+            });
+    } else if (isUserLoggedIn) {
+        tableInit(tables);
     }
 }
 
 function loadDB(arrayBuffer) {
-    setIsLoading(true);
-
-    resetTableList();
-
-    initSqlJs({locateFile: file => SQL_WASM_PATH}).then(function (SQL) {
-        let tables = null;
-        try {
-            db = new SQL.Database(new Uint8Array(arrayBuffer));
-
-            //Get all table names from master table
-            tables = db.prepare("SELECT * FROM sqlite_master WHERE type='table' OR type='view' ORDER BY name");
-        } catch (ex) {
-            if (tables !== null) {
-                tables.free();
-            }
-            setIsLoading(false);
-            window.alert(ex);
-            return;
-        }
-
-        let firstTableName = null;
-        const tableList = $("#tables");
-
-        while (tables.step()) {
-            const rowObj = tables.getAsObject();
-            const name = rowObj["name"];
-            const type = rowObj["type"];
-
-            if (firstTableName === null) {
-                firstTableName = name;
-            }
-            const rowCount = getTableRowsCount(name);
-            loadedTableNames.push(name);
-            const tableType = type !== "table" ? `, ${type}` : "";
-            tableList.append(`<option value="${name}">${name} (${rowCount} rows${tableType})</option>`);
-        }
-        tables.free();
-
-        //Select first table and show It
-        tableList.val(firstTableName);
-        doDefaultSelect(firstTableName);
-
-        $("#output-box").fadeIn();
-        $(".nouploadinfo").hide();
-        $("#sample-db-link").hide();
-        $("#dropzone").delay(50).animate({height: 75}, 500);
-        $("#success-box").show();
-
-        setIsLoading(false);
-    });
+    initSqlJs({
+        locateFile: file => SQL_WASM_PATH
+    })
+        .then(
+            SQL => {
+                SQLModule = SQL;
+                dbReset(arrayBuffer);
+            });
 }
 
 function getTableRowsCount(name) {
@@ -263,7 +318,10 @@ function getTableNameFromQuery(query) {
 function parseLimitFromQuery(query) {
     const sqlRegex = SQL_LIMIT_REGEX.exec(query);
     if (sqlRegex != null) {
-        let result = { max: 0, offset: 0 };
+        let result = {
+            max: 0,
+            offset: 0
+        };
 
         if (sqlRegex.length > 2 && typeof sqlRegex[2] !== "undefined") {
             result.offset = parseInt(sqlRegex[1]);
@@ -345,13 +403,6 @@ function refreshPagination(query) {
     }
 }
 
-function showError(msg) {
-    $("#data").hide();
-    setPagerVisible(false);
-    errorBox.show();
-    errorBox.text(msg);
-}
-
 function setPagerVisible(visible) {
     $("#bottom-bar").toggleClass("d-none", !visible);
     if (visible) {
@@ -365,7 +416,7 @@ function htmlEncode(value) {
     return $("<div/>").text(value).html();
 }
 
-function renderQuery(query) {
+function renderSheet(query, tableName) {
     const dataBox = $("#data");
     const thead = dataBox.find("thead").find("tr");
     const tbody = dataBox.find("tbody");
@@ -375,9 +426,8 @@ function renderQuery(query) {
     errorBox.hide();
     infoBox.hide();
     dataBox.show();
-
+    $(".qurredResult").show();
     let columnTypes = new Map();
-    const tableName = getTableNameFromQuery(query);
     if (tableName != null) {
         columnTypes = getTableColumnTypes(tableName);
     }
@@ -389,7 +439,7 @@ function renderQuery(query) {
         if (sel != null) {
             sel.free();
         }
-        showError(ex);
+        ShowDataQurError(ex);
         return;
     }
 
@@ -399,7 +449,8 @@ function renderQuery(query) {
         const type = columnTypes.get(columnNames[i]);
         thead.append(`<th><span data-bs-toggle="tooltip" title="${type}">${columnNames[i]}</span></th>`);
     }
-
+    if (searched)
+        thead.prepend(`<th>button</th>`);
     while (sel.step()) {
         isEmptyTable = false;
         const tr = $('<tr>');
@@ -415,14 +466,17 @@ function renderQuery(query) {
             } else {
                 let value = htmlEncode(s[i]);
                 tr.append(`<td><span title="${value}">${value}</span></td>`);
+
             }
+
         }
         tbody.append(tr);
+        if (searched) tr.prepend(`<td><button onclick="selectChar(this)">${translateData.Choice}</button></td>`);
     }
     sel.free();
 
     if (isEmptyTable) {
-        infoBox.text("No data for given select.");
+        infoBox.text(translateData.EmptyTable);
         infoBox.show();
     }
 
@@ -433,6 +487,16 @@ function renderQuery(query) {
         .forEach(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
 
     dataBox.editableTableWidget();
+}
+
+function renderQuery(query) {
+    const isEasyView = document.querySelector('.advencedControl').style.display == 'none';
+    const tableName = getTableNameFromQuery(query);
+    if (tableName && tableName.includes('ongeki_user_card') && isEasyView) {
+        userCardList();
+    } else {
+        renderSheet(query, tableName)
+    }
 }
 
 function renderBlobItem(tr, bytes) {
@@ -450,8 +514,8 @@ function renderBlobItem(tr, bytes) {
     tr.append(td);
 }
 
-function formatBytes(bytes,decimals) {
-    if(bytes === 0) return '0 Bytes';
+function formatBytes(bytes, decimals) {
+    if (bytes === 0) return '0 Bytes';
     const k = 1024,
         dm = decimals || 2,
         sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
@@ -465,85 +529,7 @@ function onKeyDown(e) {
     }
 }
 
-function arrayToCsv(data) {
-    return data.map(row =>
-        row.map(String)  // convert every value to String
-            .map(v => v.replaceAll('"', '""'))  // escape double quotes
-            .map(v => `"${v}"`)  // quote it
-            .join(',')  // comma-separated
-    ).join('\r\n');  // rows starting on new lines
-}
-
-function exportCsvTableQuery(query) {
-    let exportedRows = [];
-    let sel = null;
-    try {
-        sel = db.prepare(query);
-    } catch (ex) {
-        if (sel != null) {
-            sel.free();
-        }
-        showError(ex);
-        setIsLoading(false);
-        return null;
-    }
-
-    const columnNames = sel.getColumnNames();
-
-    exportedRows.push(...[columnNames]);
-    while (sel.step()) {
-        const rows = sel.get();
-        exportedRows.push(...[rows]);
-    }
-    sel.free();
-    return exportedRows;
-}
-
-function exportCsvTable(tableName) {
-    return exportCsvTableQuery(`SELECT * FROM '${tableName}'`);
-}
-
-function exportAllToCsv() {
-    setIsLoading(true);
-    const zip = new JSZip();
-    for (const tableName of loadedTableNames) {
-        const exportedRows = exportCsvTable(tableName);
-        if (exportedRows != null) {
-            zip.file(tableName + ".csv", arrayToCsv(exportedRows));
-        } else {
-            return;
-        }
-    }
-
-    zip.generateAsync({type: "blob"})
-        .then(function (content) {
-            saveAs(content, "exported_all_db.zip");
-        });
-    setIsLoading(false);
-}
-
-function exportSelectedTableToCsv() {
-    const tableName = $("#tables").val();
-    setIsLoading(true);
-
-    const exportedRows = exportCsvTable(tableName);
-    if (exportedRows != null) {
-        const blob = new Blob([arrayToCsv(exportedRows)], {type: "text/plain;charset=utf-8"});
-        saveAs(blob, "exported_" + tableName.toLowerCase() + "_db.csv");
-    }
-
-    setIsLoading(false);
-}
-
-function exportQueryTableToCsv() {
-    setIsLoading(true);
-
-    const query = editor.getValue();
-    const exportedRows = exportCsvTableQuery(query);
-    if (exportedRows != null) {
-        const blob = new Blob([arrayToCsv(exportedRows)], {type: "text/plain;charset=utf-8"});
-        saveAs(blob, "exported_" + getTableNameFromQuery(query).toLowerCase() + "_db.csv");
-    }
-
-    setIsLoading(false);
+function toggleAdvSearch() {
+    if ($("#advSearchEnable").is(":checked")) $(".advencedControl").show();
+    else $(".advencedControl").hide();
 }

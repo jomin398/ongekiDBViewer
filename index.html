@@ -1,151 +1,480 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
+
 <head>
-    <meta charset="utf-8">
-    <meta name="description" content="sqlite file viewer">
-    <meta name="keywords" content="sqlite,viewer,db,database,online">
-    <meta name="author" content="Juraj Novák">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQLite Viewer</title>
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-    <link href="css/select2.min.css" rel="stylesheet">
-    <link href="css/select2-bootstrap-5-theme.min.css" rel="stylesheet">
-    <link href="css/main.css" rel="stylesheet">
+    <meta name="description" content="온게키 DB 에디터">
+    <meta name="keywords" content="온게키,オンゲキ,sqlite,editor,db,database,온라인">
+    <meta name="author" content="jomin398">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="./css/select2.min.css" rel="stylesheet">
+    <link href="./css/select2-bootstrap-5-theme.min.css" rel="stylesheet">
+    <link href="./css/main.css" rel="stylesheet">
+    <link href="./css/editor.css" rel="stylesheet">
+    <link href="./css/cardRate.css" rel="stylesheet">
+    <link href="./css/kaika.css" rel="stylesheet">
+    <link href="./css/accunt.css" rel="stylesheet">
+    <link href="./css/userCardWrap.css" rel="stylesheet">
     <link rel="image_src" href="img/icon.png" />
-    <link rel="icon" type="image/png" href="img/icon.png"/>
-    <meta property="og:url" content="https://inloop.github.io/sqlite-viewer/">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="SQLite Viewer">
-    <meta property="og:description" content="sqlite file viewer">
-    <meta property="og:image" content="https://inloop.github.io/sqlite-viewer/img/icon.png">
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-N22SYDVQHZ"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-N22SYDVQHZ');
-    </script>
+    <link rel="icon" type="image/png" href="img/icon.png" />
+    <title>온게키 DB 에디터</title>
+    <script src="./js/jquery-3.7.1.min.js"></script>
+    <script src="./js/filereader.js"></script>
+    <script src="./js/sql-wasm.js"></script>
+    <script src="./js/select2.min.js"></script>
+    <script src="./js/ace/ace.js"></script>
+    <script src="./js/bootstrap.bundle.min.js"></script>
+    <script src="./js/mindmup-editabletable.js"></script>
+    <script src="./js/jszip.min.js"></script>
+    <script src="./js/FileSaver.min.js"></script>
+    <script src="./js/translateData.js"></script>
+    <script src="./js/showAlert.js"></script>
+    <script src="./js/kaikaHandler.js"></script>
+    <script src="./js/sqlErrors.js"></script>
+    <script src="./js/exportDB.js"></script>
+    <script src="./js/formAwaiter.js"></script>
+    <script src="./js/wordWidthTrans.js"></script>
+    <script src="./js/ogManager.js"></script>
+    <script src="./js/main.js"></script>
 </head>
+
 <body>
+    <div id="main-container" class="container shadow bg-white">
+        <header id="header" class="row align-items-center p-4">
+            <img src="img/logo.svg" width="54" height="54" class="col-auto p-0" alt="Database logo" />
 
-<img src="img/icon.png" style="display: none;"/>
-
-<div id="main-container" class="container shadow bg-white">
-    <header id="header" class="row align-items-center p-4">
-        <img src="img/logo.svg" width="54" height="54" class="col-auto p-0" alt="Database logo"/>
-
-        <div class="col">
-            <h4 class="mb-0">SQLite Viewer</h4>
-            <p class="mb-0">view sqlite file online</p>
+            <div class="col">
+                <h4 class="mb-0">온게키 DB 에디터</h4>
+                <p class="mb-0">Ongeki DataBase Editor</p>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm lh-1 col-auto" id="openConfig" type="button"
+                onclick="$('#searchOptionModal').modal('show')" style="display: none;">
+                <img src="./img/config.svg" alt="config" width="30px" height="30px">
+            </button>
+            <a id="resizer" class="col-auto text-decoration-none" style="color: #3474A8">
+                <svg id="resizer-expand" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                    class="bi bi-arrows-angle-expand" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd"
+                        d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707m4.344-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707" />
+                </svg>
+                <svg id="resizer-collapse" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                    class="bi bi-arrows-angle-contract collapse" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd"
+                        d="M.172 15.828a.5.5 0 0 0 .707 0l4.096-4.096V14.5a.5.5 0 1 0 1 0v-3.975a.5.5 0 0 0-.5-.5H1.5a.5.5 0 0 0 0 1h2.768L.172 15.121a.5.5 0 0 0 0 .707M15.828.172a.5.5 0 0 0-.707 0l-4.096 4.096V1.5a.5.5 0 1 0-1 0v3.975a.5.5 0 0 0 .5.5H14.5a.5.5 0 0 0 0-1h-2.768L15.828.879a.5.5 0 0 0 0-.707" />
+                </svg>
+            </a>
+        </header>
+        <div id="compat-error" class="alert alert-danger row rounded-0 d-none" role="alert">
+            해당 브라우저는 html5 기능을 지원하지 않습니다. 다른 최신 브라우저를 이용해주세요.
         </div>
 
-        <a href="#" id="resizer" class="col-auto text-decoration-none" style="color: #3474A8">
-            <svg id="resizer-expand" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-arrows-angle-expand" viewBox="0 0 16 16">
-                <path fill-rule="evenodd" d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707m4.344-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707"/>
-            </svg>
-            <svg id="resizer-collapse" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-arrows-angle-contract collapse" viewBox="0 0 16 16">
-                <path fill-rule="evenodd" d="M.172 15.828a.5.5 0 0 0 .707 0l4.096-4.096V14.5a.5.5 0 1 0 1 0v-3.975a.5.5 0 0 0-.5-.5H1.5a.5.5 0 0 0 0 1h2.768L.172 15.121a.5.5 0 0 0 0 .707M15.828.172a.5.5 0 0 0-.707 0l-4.096 4.096V1.5a.5.5 0 1 0-1 0v3.975a.5.5 0 0 0 .5.5H14.5a.5.5 0 0 0 0-1h-2.768L15.828.879a.5.5 0 0 0 0-.707"/>
-            </svg>
-        </a>
-    </header>
+        <div class="row text-center p-3 align-items-stretch" id="dropzone" onclick="dropzoneClick(this)">
+            <div class="d-flex border border-info-subtle rounded-1 align-items-center justify-content-center">
+                <div id="drop-text">
+                    <!-- <b>파일을 끌어오면</b> 로딩이 됩니다. 또한, 여기를 눌러 파일 업로드가 가능합니다.<br /> -->
+                    <div class="nouploadinfo"><b>파일을 끌어오면</b> 로딩이 됩니다. 또한, 여기를 눌러 파일 업로드가 가능합니다.
+                    </div>
+                    <div class="reuploadinfo"><b>파일을 끌어오면</b> 다시 불러오게 됩니다. 또한, 여기를 눌러 파일 업로드가 가능합니다.
+                    </div>
+                </div>
+                <div id="drop-loading" class="d-flex align-items-center d-none">
+                    <div class="spinner-border me-2" role="status">
+                        <span class="visually-hidden">로딩...</span>
+                    </div>
+                    <b>작업중...</b>
+                </div>
+            </div>
+        </div>
+        <div id="menu-box" class="container-fluid" style="display: none;">
+            <div class="d-flex mt-3 mb-3 justify-content-end" style="gap:1rem;">
+                <button class="btn btn-primary col-auto" id="save" type="submit" onclick="exportAsDB()">저장</button>
+                <button class="btn btn-primary col-auto" id="view-chrs" type="submit" onclick="renderCharList()">보유
+                    케릭터</button>
+                <button class="btn btn-primary col-auto" id="view-cards" type="submit" onclick="userCardList()">보유
+                    카드</button>
+            </div>
 
-    <div id="compat-error" class="alert alert-danger row rounded-0 d-none" role="alert">
-        Sorry but your browser does not support some of new HTML5 features! Try using latest version of Google Chrome or Firefox.
-    </div>
+        </div>
+        <div id="query-box" class="container-fluid" style="display: none;">
+            <div class="d-flex mt-3 mb-3">
+                <input type="text" id="query-input" class="form-control form-control-lg col me-2"
+                    placeholder="찾으려는 케릭터 이름을 입력">
+                <select name="queryopt" id="queryopt" class="btn btn-outline-secondary dropdown-toggle me-2">
+                    <option value="by_name" class="dropdown-item">이름</option>
+                    <option value="by_uuid" class="dropdown-item">고유 ID</option>
+                </select>
+                <button class="btn btn-primary col-auto me-2" id="query-run" type="submit"
+                    onclick="cardSearch()">검색</button>
 
-    <div class="row text-center p-3 align-items-stretch" id="dropzone" onclick="dropzoneClick(this)">
-        <div class="d-flex border border-info-subtle rounded-1 align-items-center justify-content-center">
-            <div id="drop-text">
-                <b>Drop file here</b> to load content or click on this box to open file dialog.<br/>
+            </div>
+        </div>
 
-                <div class="nouploadinfo small mb-3">No file will be uploaded - uses only JavaScript HTML5 FileReader.
+        <div id="output-box" class="container-fluid">
+            <div class="advencedControl">
+                <div class="input-group">
+                    <select id="tables" class="form-select" title="Table"></select>
+
+                    <div class="dropdown ms-2">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenu1"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            저장
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                            <li><a class="dropdown-item" href="#" onclick="exportAllToCsv()">전체 테이블을 CSV로 저장</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="exportSelectedTableToCsv()">선택한 테이블을 CSV로
+                                    저장</a>
+                            </li>
+                            <li><a class="dropdown-item" href="#" onclick="exportQueryTableToCsv()">검색한 테이블들을 CSV로
+                                    저장</a>
+                            </li>
+                            <li><a class="dropdown-item" href="#" onclick="exportAsDB()">SqLite파일로 내보내기</a></li>
+                        </ul>
+                    </div>
                 </div>
 
-                <a id="sample-db-link" class="no-propagate small text-decoration-none"
-                   href="examples/Chinook_Sqlite.sqlite">&hellip; or download &amp; try this sample file</a>
-            </div>
-            <div id="drop-loading" class="d-flex align-items-center d-none">
-                <div class="spinner-border me-2" role="status">
-                    <span class="visually-hidden">Loading...</span>
+                <div class="d-flex mt-3 mb-3">
+                    <div id="sql-editor" class="form-control form-control-lg col me-2"></div>
+                    <button class="btn btn-primary col-auto" id="sql-run" type="submit"
+                        onclick="executeSql(this)">Execute</button>
                 </div>
-                <b>Processing file...</b>
+            </div>
+            <div class="alert alert-info" id="info" style="display: none"></div>
+            <div class="row qurredResult pb-4">
+                <div class="overflow-x-auto">
+                    <table id="data" class="table table-sm table-bordered table-hover table-striped" translate="no">
+                        <thead>
+                            <tr></tr>
+                        </thead>
+                        <tbody class="table-group-divider"></tbody>
+                    </table>
+                </div>
+
+            </div>
+            <!-- <div class="userCardWrap container-fluid"></div> -->
+        </div>
+    </div>
+
+    <div id="bottom-bar" class="d-flex position-sticky justify-content-center bottom-0 pb-4 d-none pe-none">
+        <div class="row bg-white border border-dark shadow p-3 rounded-2 pe-auto">
+            <button class="btn btn-outline-secondary btn-sm lh-1 col-auto" id="page-prev" type="submit"
+                onclick="setPage(this, false)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                    class="bi bi-caret-left-fill" viewBox="0 0 16 16">
+                    <path
+                        d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z" />
+                </svg>
+            </button>
+            <a href="javascript:void(0)" data-bs-toggle="tooltip" class="text-decoration-none col-auto"
+                onclick="setPage(this)" id="pager"></a>
+            <button class="btn btn-outline-secondary btn-sm lh-1 col-auto" id="page-next" type="submit"
+                onclick="setPage(this, true)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                    class="bi bi-caret-right-fill" viewBox="0 0 16 16">
+                    <path
+                        d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
+                </svg>
+            </button>
+        </div>
+    </div>
+    <div class="modal fade" id="searchOptionModal" tabindex="-1" role="dialog" aria-labelledby="searchOptionModalTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="searchOptionModalTitle">시스템</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                        onclick="$('#searchOptionModal').modal('hide')">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row justify-content-center">
+                        <div class="col-12 col-lg-10 mx-auto">
+                            <div class="my-4">
+                                <div class="list-group mb-5 shadow">
+                                    <div class="list-group-item">
+                                        <div class="row align-items-center">
+                                            <div class="col">
+                                                <strong class="mb-0">고급검색 기능</strong>
+                                                <p class="text-muted mb-0">직접 Sqlite (데이터베이스) 명령을 실행, 수정할 수 있습니다.</p>
+                                            </div>
+                                            <div class="col-auto">
+                                                <div class="custom-control custom-switch">
+                                                    <input type="checkbox" class="custom-control-input"
+                                                        id="advSearchEnable" onchange="toggleAdvSearch()">
+                                                    <span class="custom-control-label"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="list-group-item">
+                                        <div class="row align-items-center">
+                                            <div class="col">
+                                                <strong class="mb-0">DB 변경시 저장 알림</strong>
+                                                <p class="text-muted mb-0">DB가 수정될 때 저장 경고 안내를 활성합니다.
+                                                </p>
+                                            </div>
+                                            <div class="col-auto">
+                                                <div class="custom-control custom-switch">
+                                                    <input type="checkbox" class="custom-control-input"
+                                                        id="notifyDBupdate" checked />
+                                                    <span class="custom-control-label"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="list-group-item">
+                                        <div class="row align-items-center">
+                                            <div class="col">
+                                                <strong class="mb-0">카드정보</strong>
+                                                <div class="aime_wrap">
+                                                    <div class="aime_cont">
+                                                        <div class="aime_col headmsg">이 카드는 「Amusement IC」에 대응하는 기기에서
+                                                            사용할 수 있습니다</div>
+                                                        <div class="aime_col middle">
+                                                            <div class="aime_mark_cont">
+                                                                <i class="aime_mark"></i>
+                                                                <span class="aime_logoText">Amusement IC</span>
+                                                            </div>
+                                                            <div class="aime_ifomDmy_cont">
+                                                                <div class="aime_ifomDmy">
+                                                                    <h4>중요사항</h4>
+                                                                    <hr>
+                                                                    <p>실제 카드가 아닙니다.</p>
+                                                                </div>
+                                                                <div class="aime_dmyQr_cont">
+                                                                    <i class="aime_dmyQr"></i>
+                                                                </div>
+
+                                                            </div>
+                                                        </div>
+                                                        <div class="aime_col footer">
+                                                            <div class="memo_box">
+                                                                <span class="memo_text"></span>
+                                                                <span class="memo_deco">memo</span>
+                                                            </div>
+                                                            <div class="ac_box">
+                                                                <span class="ac">0000 0000 0000 0000 0000</span>
+                                                                <div class="ac_deco" translate="no">
+                                                                    <span>A</span>
+                                                                    <span>C</span>
+                                                                    <span>C</span>
+                                                                    <span>E</span>
+                                                                    <span>S</span>
+                                                                    <span>S</span>
+                                                                    <span>C</span>
+                                                                    <span>O</span>
+                                                                    <span>D</span>
+                                                                    <span>E</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                        onclick="$('#searchOptionModal').modal('hide')">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="CardListModal" tabindex="-1" role="dialog" aria-labelledby="CardListModalTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-fullscreen" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="CardListModalTitle">보유카드</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                        onclick="$('#CardListModal').modal('hide')">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row justify-content-center flex-wrap userCardWrap">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                        onclick="$('#CardListModal').modal('hide')">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="CardOptionModel" tabindex="-1" role="dialog" aria-labelledby="CardOptionModelTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="CardOptionModelTitle">카드 옵션</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                        onclick="$('#CardOptionModel').modal('hide')">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+
+                    <div class="list-group shadow">
+                        <div class="list-group-item">
+                            <div class="col">
+                                <strong class="mb-0">카드 정보</strong>
+                            </div>
+                            <table class="table border bg-white">
+                                <thead>
+                                    <tr>
+                                        <th>이름</th>
+                                        <th>정보</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th scope="col">카드 생성일</th>
+                                        <td>0000-00-00 00:00:00.0</td>
+
+                                    </tr>
+                                    <tr>
+                                        <th scope="col">스킬 번호</th>
+                                        <td>-1</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="col">개화한 날짜</th>
+                                        <td>0000-00-00 00:00:00.0</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="col">초개화한 날짜</th>
+                                        <td>0000-00-00 00:00:00.0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="col">
+                                <strong class="mb-0">한계 돌파</strong>
+                                <p>한계를 돌파하여 레벨 제한을 넘어보자</p>
+                            </div>
+                            <div class="d-flex col-auto justify-content-between">
+                                <button id="btn1" type="button" class="btn btn-primary kaika">개화</button>
+                                <button id="btn2" type="button" class="btn btn-primary chokaika">초개화</button>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                            onclick="$('#CardOptionModel').modal('hide')">닫기</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="userLogin" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <form id="userLogin" class="d-flex flex-column">
+                        <div class="modal-header">
+                            <h5 class="modal-title">데이터 베이스 로그인</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+                                onclick="$('#userLogin').modal('hide')">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="form-group row">
+                            <div class="d-flex flex-row p-3">
+                                <div
+                                    class="d-flex flex-row w-25 align-items-center justify-content-center border rounded p-1">
+                                    <span translate="no">Lv.</span>
+                                    <input type="text" class="text-center border-0 w-100" id="userLV" readonly>
+                                </div>
+                                <input type="text" class="form-control text-center flex-grow-1" id="userID" readonly>
+                            </div>
+                            <div class="col">
+                                <label for="LTSVersion">마지막으로 기록된 버전</label>
+                                <input type="text" class="form-control text-center flex-grow-1" id="LTSVersion"
+                                    readonly>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col form-check">
+                                <label for="accessCodeInput">Access Code</label>
+                                <details>
+                                    <summary>Access Code?</summary>
+                                    <ul>
+                                        <li>액세스 코드 (이하, 접근 코드)</li>
+                                        <li>
+                                            카드 뒷면에 적혀있는 20자리 일렬 번호 입니다.
+                                        </li>
+                                        <li>
+                                            게임 플레이 중 연동 서비스 정보 표시 할 때 보입니다.
+                                        </li>
+                                    </ul>
+                                </details>
+                                <input type="text" class="form-control text-center is-invalid" id="accessCodeInput"
+                                    placeholder="0000 0000 0000 0000 0000" maxlength="24" minlength="24">
+                                <div class="invalid-feedback">
+                                    <span class="accessCode_guide Infotext">
+                                        띄어쓰기 포함 24글자 입니다.
+                                    </span>
+                                    <span class="accessCode_guide status">(0/24)</span>
+                                </div>
+                                <div class="valid-feedback">
+                                    좋습니다!
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer justify-content-between">
+                            <div class="accessCode-tip">
+                                <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img">
+                                    <use xlink:href="#info-fill" />
+                                </svg>
+                                <span>자동으로 띄어쓰기가 됩니다.</span>
+                            </div>
+                            <button type="submit" class="btn btn-primary">전송</button>
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                                onclick="$('#userLogin').modal('hide')">닫기</button>
+                        </div>
+                    </form>
+                </div>
+
             </div>
         </div>
     </div>
 
-    <div id="output-box" class="container-fluid">
-        <div class="input-group">
-            <select id="tables" class="form-select" title="Table"></select>
-
-            <div class="dropdown ms-2">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenu1"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                    Export
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-                    <li><a class="dropdown-item" href="#" onclick="exportAllToCsv()">All tables to CSV</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="exportSelectedTableToCsv()">Selected table to CSV</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="exportQueryTableToCsv()">Query table to CSV</a></li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="d-flex mt-3 mb-3">
-            <div id="sql-editor" class="form-control form-control-lg col me-2"></div>
-            <button class="btn btn-primary col-auto" id="sql-run" type="submit" onclick="executeSql(this)">Execute</button>
-        </div>
-
-        <div class="alert alert-danger" id="error" style="display: none"></div>
-        <div class="alert alert-info" id="info" style="display: none"></div>
-
-        <div class="row pb-4">
-            <div class="overflow-x-auto">
-                <table id="data" class="table table-sm table-bordered table-hover table-striped">
-                    <thead>
-                    <tr></tr>
-                    </thead>
-                    <tbody class="table-group-divider"></tbody>
-                </table>
-            </div>
-
-        </div>
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
+            <path
+                d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
+        </symbol>
+        <symbol id="info-fill" fill="currentColor" viewBox="0 0 16 16">
+            <path
+                d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z" />
+        </symbol>
+        <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
+            <path
+                d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+        </symbol>
+    </svg>
+    <div class="position-fixed top-0 start-50 translate-middle-x alert-container" style="z-index: 1100">
     </div>
-</div>
-
-<div id="bottom-bar" class="d-flex position-sticky justify-content-center bottom-0 pb-4 d-none pe-none">
-    <div class="row bg-white border border-dark shadow p-3 rounded-2 pe-auto">
-        <button class="btn btn-outline-secondary btn-sm lh-1 col-auto" id="page-prev" type="submit" onclick="setPage(this, false)">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-left-fill" viewBox="0 0 16 16">
-                <path d="m3.86 8.753 5.482 4.796c.646.566 1.658.106 1.658-.753V3.204a1 1 0 0 0-1.659-.753l-5.48 4.796a1 1 0 0 0 0 1.506z"/>
-            </svg>
-        </button>
-        <a href="javascript:void(0)" data-bs-toggle="tooltip" class="text-decoration-none col-auto" onclick="setPage(this)" id="pager"></a>
-        <button class="btn btn-outline-secondary btn-sm lh-1 col-auto" id="page-next" type="submit" onclick="setPage(this, true)">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-caret-right-fill" viewBox="0 0 16 16">
-                <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z"/>
-            </svg>
-        </button>
-    </div>
-</div>
-
-<footer class="col text-center text-secondary py-2 my-1 small" id="footer">
-    <a href="https://yuraj11.github.io" class="text-decoration-none">&copy; 2024 Juraj Novák</a><br>
-    <small>| <a href="https://github.com/inloop/sqlite-viewer" class="text-decoration-none link-opacity-75">Fork me on GitHub</a> |</small>
-</footer>
-
-<input type="file" id="dropzone-dialog" style="opacity: 0;display:none">
-
-<script src="js/jquery-3.7.1.min.js"></script>
-<script src="js/filereader.js"></script>
-<script src="js/sql-wasm.js?v=1100"></script>
-<script src="js/select2.min.js?v=4013"></script>
-<script src="js/ace/ace.js?v=1323"></script>
-<script src="js/bootstrap.bundle.min.js?v=532"></script>
-<script src="js/mindmup-editabletable.js"></script>
-<script src="js/jszip.min.js"></script>
-<script src="js/FileSaver.min.js"></script>
-<script src="js/main.js?v=17"></script>
-
+    <input type="file" id="dropzone-dialog" style="opacity: 0;display:none">
+    <footer class="col text-center text-secondary py-2 my-1 small" id="footer">
+        <p>
+            본 홈페이지는 <a href="https://yuraj11.github.io" class="text-decoration-none">&copy; 2024 Juraj Novák</a>의 <a
+                href="https://github.com/inloop/sqlite-viewer">sqlite-viewer</a>소스를 바탕으로 제작되었습니다.
+        </p>
+        <a href="https://www.google.com/intl/ja/inputtools/try/" target="_blank">일본어 입력기</a>
+        <a href="https://github.com/jomin398" class="text-decoration-none" translate="no">&copy; 2024 jomin398</a>
+        <!-- <small>| <a href="https://github.com/inloop/sqlite-viewer" class="text-decoration-none link-opacity-75">Fork me on GitHub</a> |</small> -->
+    </footer>
 </body>
+
 </html>

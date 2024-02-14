@@ -1,14 +1,9 @@
-[![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-SQLite%20Viewer-brightgreen.svg?style=flat)](http://android-arsenal.com/details/1/2497)
-
-SQLite Viewer
+Ongeki DataBase Editor
 ============
 
-*View SQLite file online. Uses [sql.js](https://github.com/sql-js/sql.js) for parsing sqlite files.*
-
-You can also load remote files (using JS ajax, remote server must send `Access-Control-Allow-Origin:*`):
-`http://inloop.github.io/sqlite-viewer/?url=http://example.com/data.sqlite`
-
-![](/img/preview.png?raw=true "Example sqlite")
+Edit `オンゲキ`'s DataBase file online. Uses [sql.js](https://github.com/sql-js/sql.js) for parsing sqlite files.
+### NOTE
+Only files uploaded by the user are modified.
 
 ### License
     Licensed under the Apache License, Version 2.0 (the "License");
